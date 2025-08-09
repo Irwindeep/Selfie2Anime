@@ -1,12 +1,15 @@
 from typing import Dict, Tuple
+
 from selfie2anime.cyclegan import Discriminator, VanillaGenerator
 from selfie2anime.utils.loss import _ImgTuple, DiscLoss, CycleGANLossGen
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
+import torchvision.utils as vutils
 
 import argparse
 import torch
 import torch.nn as nn
+import wandb
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -83,7 +86,23 @@ class CycleGAN:
         train_loader: DataLoader[_ImgTuple],
         optim_disc: torch.optim.Optimizer,
         optim_gen: torch.optim.Optimizer,
+        wandb_run: wandb.Run,
+        visualization_batch: Tuple[torch.Tensor, torch.Tensor],
     ) -> None:
+        batch_A, batch_B = visualization_batch
+        img_grid_A = vutils.make_grid(batch_A, nrow=4, normalize=True)
+        img_grid_B = vutils.make_grid(batch_B, nrow=4, normalize=True)
+
+        wandb_run.log(
+            {"Image Batch - A": wandb.Image(img_grid_A, caption="Real Images - A")}
+        )
+        wandb_run.log(
+            {"Image Batch - B": wandb.Image(img_grid_B, caption="Real Images - B")}
+        )
+
+        batch_A = batch_A.to(DEVICE)
+        batch_B = batch_B.to(DEVICE)
+
         for epoch in range(1, self.config.num_epochs + 1):
             n = len(str(self.config.num_epochs))
             desc = f"Epoch [{epoch:0{n}d}/{self.config.num_epochs}]"
@@ -91,6 +110,28 @@ class CycleGAN:
             iter = tqdm(train_loader, desc=desc, leave=False)
 
             disc_losses, gen_losses = self._train_epoch(iter, optim_disc, optim_gen)
+
+            with torch.no_grad():
+                fake_batch_A = self.gen_A(batch_B).cpu()
+                fake_batch_B = self.gen_B(batch_A).cpu()
+
+            fake_img_grid_A = vutils.make_grid(fake_batch_A, nrow=4, normalize=True)
+            fake_img_grid_B = vutils.make_grid(fake_batch_B, nrow=4, normalize=True)
+
+            wandb_run.log(
+                {
+                    "Generated Image Batch - A": wandb.Image(
+                        fake_img_grid_A, caption=f"Epoch {epoch} Generated Images - A"
+                    )
+                }
+            )
+            wandb_run.log(
+                {
+                    "Generated Image Batch - B": wandb.Image(
+                        fake_img_grid_B, caption=f"Epoch {epoch} Generated Images - B"
+                    )
+                }
+            )
 
             for key, val in disc_losses.items():
                 if key not in self.disc_train_losses:

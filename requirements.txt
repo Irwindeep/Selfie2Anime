@@ -2,3 +2,5 @@ torch
 torchvision
 PIL
 pytest
+wandb
+dotenv

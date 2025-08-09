@@ -1,13 +1,28 @@
+from typing import Tuple
 from selfie2anime import CycleGAN
 from selfie2anime.utils.dataset import Selfie2AnimeDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
+from dotenv import load_dotenv
 
 import argparse
 import torch
+import os
+import wandb
+
+torch.manual_seed(12)
 
 
-def train_cyclegan(config: argparse.Namespace) -> None:
+def wandb_setup(config: argparse.Namespace) -> wandb.Run:
+    load_dotenv(config.env_path)
+    wandb_key = os.getenv(config.wandb_key)
+    wandb.login(key=wandb_key)
+
+    wandb_run = wandb.init(project="selfie2anime-cyclegan-training")
+    return wandb_run
+
+
+def train_cyclegan(config: argparse.Namespace, wandb_run: wandb.Run) -> None:
     transform = transforms.Compose(
         [
             transforms.Resize((config.img_size, config.img_size)),
@@ -19,6 +34,11 @@ def train_cyclegan(config: argparse.Namespace) -> None:
     train_dataset = Selfie2AnimeDataset(
         root=config.dataset_root, split="train", transform=transform
     )
+
+    indices = torch.randint(low=0, high=len(train_dataset) - 1, size=(4 * 4,)).numpy()
+    selfie_batch = torch.stack([train_dataset[idx][0] for idx in indices])
+    anime_batch = torch.stack([train_dataset[idx][1] for idx in indices])
+
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     cyclegan = CycleGAN(config=config, mode=config.mode)
 
@@ -33,12 +53,23 @@ def train_cyclegan(config: argparse.Namespace) -> None:
         betas=(config.beta1, config.beta2),
     )
 
-    cyclegan.train(train_loader, optim_disc=optim_disc, optim_gen=optim_gen)
+    cyclegan.train(
+        train_loader=train_loader,
+        optim_disc=optim_disc,
+        optim_gen=optim_gen,
+        wandb_run=wandb_run,
+        visualization_batch=(selfie_batch, anime_batch),
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="cyclegan")
+
+    # make sure env has a .env file with wandb API key
+    parser.add_argument("--env_path", type=str, default=".env")
+    parser.add_argument("--wandb_key", type=str, default="WANDB_KEY")
+
     parser.add_argument("--mode", type=str, default="vanilla")
     parser.add_argument("--dataset_root", type=str, default="data")
     parser.add_argument("--img_size", type=int, default=256)
@@ -61,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument("--lmbd_iden", type=float, default=0.1)
 
     config = parser.parse_args()
+    wandb_run = wandb_setup(config)
 
     if config.model == "cyclegan":
-        train_cyclegan(config)
+        train_cyclegan(config, wandb_run)
