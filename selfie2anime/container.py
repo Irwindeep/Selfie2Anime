@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Tuple
 from selfie2anime.cyclegan import Discriminator, VanillaGenerator
 from selfie2anime.utils.loss import _ImgTuple, DiscLoss, CycleGANLossGen
 from torch.utils.data import DataLoader
