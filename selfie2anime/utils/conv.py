@@ -28,7 +28,7 @@ class ConvBlock(nn.Module):
         act_fn = {
             "relu": nn.ReLU(),
             "leaky_relu": nn.LeakyReLU(negative_slope=0.2),
-        }.get(activation, nn.ReLU())
+        }.get(activation, nn.Identity())
 
         # default normalization is Identity to handle spectral normalization
         norm_fn = {
@@ -36,6 +36,7 @@ class ConvBlock(nn.Module):
             "instance_norm": nn.InstanceNorm2d(num_features=out_channels),
         }.get(norm, nn.Identity())
 
+        bias = not (norm == "batch_norm")
         conv = nn.Conv2d(
             in_channels,
             out_channels,
@@ -43,6 +44,7 @@ class ConvBlock(nn.Module):
             stride=stride,
             padding=padding,
             padding_mode=padding_mode,
+            bias=bias,
         )
         if norm == "spectral_norm":
             # apply spectral normalization on conv weights
@@ -84,7 +86,7 @@ class UpConvBlock(nn.Module):
         act_fn = {
             "relu": nn.ReLU(),
             "leaky_relu": nn.LeakyReLU(negative_slope=0.2),
-        }.get(activation, nn.ReLU())
+        }.get(activation, nn.Identity())
 
         # default normalization is Identity to handle spectral normalization
         norm_fn = {
@@ -92,6 +94,7 @@ class UpConvBlock(nn.Module):
             "instance_norm": nn.InstanceNorm2d(num_features=out_channels),
         }.get(norm, nn.Identity())
 
+        bias = not (norm == "batch_norm")
         transpose_conv = nn.ConvTranspose2d(
             in_channels,
             out_channels,
@@ -99,6 +102,7 @@ class UpConvBlock(nn.Module):
             stride=stride,
             padding=padding,
             output_padding=output_padding,
+            bias=bias,
         )
         if norm == "spectral_norm":
             # apply spectral normalization on transpose conv weights
