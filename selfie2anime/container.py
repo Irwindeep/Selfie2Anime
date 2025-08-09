@@ -22,7 +22,7 @@ def initialize_weights(model: nn.Module, mean: float, std: float) -> None:
             if module.bias is not None:
                 nn.init.constant_(module.bias.data, 0.0)
 
-        if isinstance(module, (nn.BatchNorm2d, nn.InstanceNorm2d)):
+        if isinstance(module, (nn.BatchNorm2d)):
             nn.init.normal_(module.weight.data, mean=1.0, std=std)
             nn.init.constant_(module.bias.data, 0.0)
 
