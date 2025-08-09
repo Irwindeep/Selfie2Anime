@@ -39,30 +39,28 @@ def train_cyclegan(config: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="cyclegan")
+    parser.add_argument("--mode", type=str, default="vanilla")
+    parser.add_argument("--dataset_root", type=str, default="data")
+    parser.add_argument("--img_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=4)
 
-    if parser.parse_args().model == "cyclegan":
-        parser = argparse.ArgumentParser()
+    parser.add_argument("--in_channels", type=int, default=3)
+    parser.add_argument("--num_features", type=int, default=64)
+    parser.add_argument("--num_residuals", type=int, default=9)
+    parser.add_argument("--disc_channels", type=list, default=[64, 128, 256, 512])
 
-        parser.add_argument("--mode", type=str, default="vanilla")
-        parser.add_argument("--dataset_root", type=str, default="data")
-        parser.add_argument("--img_size", type=int, default=256)
-        parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--init_mean", type=float, default=0.0)
+    parser.add_argument("--init_std", type=float, default=0.02)
 
-        parser.add_argument("--in_channels", type=int, default=3)
-        parser.add_argument("--num_features", type=int, default=64)
-        parser.add_argument("--num_residuals", type=int, default=9)
-        parser.add_argument("--disc_channels", type=list, default=[64, 128, 256, 512])
+    parser.add_argument("--num_epochs", type=int, default=100)
+    parser.add_argument("--disc_lr", type=float, default=2e-4)
+    parser.add_argument("--gen_lr", type=float, default=2e-4)
+    parser.add_argument("--beta1", type=float, default=0.5)
+    parser.add_argument("--beta2", type=float, default=0.999)
+    parser.add_argument("--lmbd_cyc", type=float, default=10.0)
+    parser.add_argument("--lmbd_iden", type=float, default=0.1)
 
-        parser.add_argument("--init_mean", type=float, default=0.0)
-        parser.add_argument("--init_std", type=float, default=0.02)
+    config = parser.parse_args()
 
-        parser.add_argument("--num_epochs", type=int, default=100)
-        parser.add_argument("--disc_lr", type=float, default=2e-4)
-        parser.add_argument("--gen_lr", type=float, default=2e-4)
-        parser.add_argument("--beta1", type=float, default=0.5)
-        parser.add_argument("--beta2", type=float, default=0.999)
-        parser.add_argument("--lmbd_cyc", type=float, default=10.0)
-        parser.add_argument("--lmbd_iden", type=float, default=0.1)
-
-        config = parser.parse_args()
+    if config.model == "cyclegan":
         train_cyclegan(config)
