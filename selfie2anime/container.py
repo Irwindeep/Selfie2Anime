@@ -129,6 +129,11 @@ class CycleGAN:
                 disc_fake=(disc_fake_A, disc_fake_B),
             )
 
+            ## Train Discriminators
+            optim_disc.zero_grad()
+            disc_loss["loss_disc"].backward()
+            optim_disc.step()
+
             ## Compute Generator Loss
             disc_fake_A = self.disc_A(fake_A)
             disc_fake_B = self.disc_B(fake_B)
@@ -149,11 +154,6 @@ class CycleGAN:
                 disc_fake=(disc_fake_A, disc_fake_B),
                 iden_imgs=iden_imgs,
             )
-
-            ## Train Discriminators
-            optim_disc.zero_grad()
-            disc_loss["loss_disc"].backward()
-            optim_disc.step()
 
             ## Train Generators
             optim_gen.zero_grad()
