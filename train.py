@@ -1,4 +1,3 @@
-from typing import Tuple
 from selfie2anime import CycleGAN
 from selfie2anime.utils.dataset import Selfie2AnimeDataset
 from torch.utils.data import DataLoader
@@ -9,6 +8,7 @@ import argparse
 import torch
 import os
 import wandb
+import pickle
 
 torch.manual_seed(12)
 
@@ -60,6 +60,10 @@ def train_cyclegan(config: argparse.Namespace, wandb_run: wandb.Run) -> None:
         wandb_run=wandb_run,
         visualization_batch=(selfie_batch, anime_batch),
     )
+
+    os.makedirs("models", exist_ok=True)
+    with open(f"models/{config.mode}_cyclegan.pkl", "wb") as file:
+        pickle.dump(cyclegan, file)
 
 
 if __name__ == "__main__":
