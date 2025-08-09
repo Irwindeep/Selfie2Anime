@@ -66,7 +66,7 @@ class CycleGAN:
         self.disc_B = Discriminator(
             in_channels=config.in_channels,
             disc_channels=config.disc_channels,
-        )
+        ).to(DEVICE)
         self.disc_loss_fn = DiscLoss()
 
         # weight initialization
