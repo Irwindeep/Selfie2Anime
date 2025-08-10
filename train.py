@@ -8,7 +8,6 @@ import argparse
 import torch
 import os
 import wandb
-import pickle
 
 torch.manual_seed(12)
 
@@ -52,6 +51,13 @@ def train_cyclegan(config: argparse.Namespace, wandb_run: wandb.Run) -> None:
         lr=config.gen_lr,
         betas=(config.beta1, config.beta2),
     )
+    os.makedirs(config.save_dir, exist_ok=True)
+    os.makedirs(f"{config.save_dir}/{config.model}", exist_ok=True)
+    os.makedirs(f"{config.save_dir}/{config.model}/{config.mode}", exist_ok=True)
+
+    os.makedirs(config.result_dir, exist_ok=True)
+    os.makedirs(f"{config.result_dir}/{config.model}", exist_ok=True)
+    os.makedirs(f"{config.result_dir}/{config.model}/{config.mode}", exist_ok=True)
 
     cyclegan.train(
         train_loader=train_loader,
@@ -61,14 +67,12 @@ def train_cyclegan(config: argparse.Namespace, wandb_run: wandb.Run) -> None:
         visualization_batch=(selfie_batch, anime_batch),
     )
 
-    os.makedirs("models", exist_ok=True)
-    with open(f"models/{config.mode}_cyclegan.pkl", "wb") as file:
-        pickle.dump(cyclegan, file)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="cyclegan")
+    parser.add_argument("--save_dir", type=str, default="models")
+    parser.add_argument("--result_dir", type=str, default="results")
 
     # make sure env has a .env file with wandb API key
     parser.add_argument("--env_path", type=str, default=".env")

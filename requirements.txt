@@ -4,3 +4,4 @@ PIL
 pytest
 wandb
 dotenv
+matplotlib

@@ -1,7 +1,9 @@
+import os
 from typing import Dict, Tuple
 
 from selfie2anime.cyclegan import Discriminator, VanillaGenerator
 from selfie2anime.utils.loss import _ImgTuple, DiscLoss, CycleGANLossGen
+from selfie2anime.utils import visualize_loss_dist
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import torchvision.utils as vutils
@@ -10,6 +12,7 @@ import argparse
 import torch
 import torch.nn as nn
 import wandb
+import pickle
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -103,6 +106,10 @@ class CycleGAN:
         batch_A = batch_A.to(DEVICE)
         batch_B = batch_B.to(DEVICE)
 
+        self._load_model_state(
+            path=f"{self.config.save_dir}/{self.config.model}/{self.config.mode}"
+        )
+
         for epoch in range(1, self.config.num_epochs + 1):
             n = len(str(self.config.num_epochs))
             desc = f"Epoch [{epoch:0{n}d}/{self.config.num_epochs}]"
@@ -110,6 +117,9 @@ class CycleGAN:
             iter = tqdm(train_loader, desc=desc, leave=False)
 
             disc_losses, gen_losses = self._train_epoch(iter, optim_disc, optim_gen)
+            self._save_model_state(
+                path=f"{self.config.save_dir}/{self.config.model}/{self.config.mode}"
+            )
 
             with torch.no_grad():
                 fake_batch_A = self.gen_A(batch_B).cpu()
@@ -142,6 +152,18 @@ class CycleGAN:
                 if key not in self.gen_train_losses:
                     self.gen_train_losses[key] = []
                 self.gen_train_losses[key].append(val / num_batches)
+
+        visualize_loss_dist(
+            loss_history=self.disc_train_losses,
+            title=f"{self.config.mode.capitalize()} CycleGAN Discriminator Training Loss-Epoch Distribution",
+            save_path=f"{self.config.result_dir}/{self.config.model}/{self.config.mode}/disc_loss.png",
+        )
+
+        visualize_loss_dist(
+            loss_history=self.gen_train_losses,
+            title=f"{self.config.mode.capitalize()} CycleGAN Generator Training Loss-Epoch Distribution",
+            save_path=f"{self.config.result_dir}/{self.config.model}/{self.config.mode}/gen_loss.png",
+        )
 
     def _train_epoch(
         self,
@@ -215,3 +237,61 @@ class CycleGAN:
                 gen_losses[key] = val.item() + gen_losses.get(key, 0.0)
 
         return disc_losses, gen_losses
+
+    def _save_model_state(self, path: str) -> None:
+        """
+        Save all four models and loss history as pickle files.
+        """
+
+        with open(f"{path}/gen_A.pkl", "wb") as file:
+            pickle.dump(self.gen_A, file)
+        with open(f"{path}/gen_B.pkl", "wb") as file:
+            pickle.dump(self.gen_B, file)
+
+        with open(f"{path}/disc_A.pkl", "wb") as file:
+            pickle.dump(self.disc_A, file)
+        with open(f"{path}/disc_B.pkl", "wb") as file:
+            pickle.dump(self.disc_B, file)
+
+        with open(f"{path}/gen_train_losses.pkl", "wb") as file:
+            pickle.dump(self.gen_train_losses, file)
+        with open(f"{path}/disc_train_losses.pkl", "wb") as file:
+            pickle.dump(self.disc_train_losses, file)
+
+    def _load_model_state(self, path: str) -> None:
+        """
+        Loads stored model state if any exists.
+        """
+
+        if not all(
+            [
+                os.path.exists(p)
+                for p in [
+                    f"{path}/gen_A.pkl",
+                    f"{path}/gen_B.pkl",
+                    f"{path}/disc_A.pkl",
+                    f"{path}/disc_B.pkl",
+                    f"{path}/gen_train_losses.pkl",
+                    f"{path}/disc_train_losses",
+                ]
+            ]
+        ):
+            print("No saved checkpoint found, Training model from scratch ...")
+            return
+
+        print("Found Saved Checkpoint! Loading and continuing training ...")
+
+        with open(f"{path}/gen_A.pkl", "wb") as file:
+            self.gen_A = pickle.load(file)
+        with open(f"{path}/gen_B.pkl", "wb") as file:
+            self.gen_B = pickle.load(file)
+
+        with open(f"{path}/disc_A.pkl", "wb") as file:
+            self.disc_A = pickle.load(file)
+        with open(f"{path}/disc_B.pkl", "wb") as file:
+            self.disc_B = pickle.load(file)
+
+        with open(f"{path}/gen_train_losses.pkl", "wb") as file:
+            self.gen_train_losses = pickle.load(file)
+        with open(f"{path}/disc_train_losses.pkl", "wb") as file:
+            self.disc_train_losses = pickle.load(file)
