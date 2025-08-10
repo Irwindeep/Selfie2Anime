@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument("--beta1", type=float, default=0.5)
     parser.add_argument("--beta2", type=float, default=0.999)
     parser.add_argument("--lmbd_cyc", type=float, default=10.0)
-    parser.add_argument("--lmbd_iden", type=float, default=0.1)
+    parser.add_argument("--lmbd_iden", type=float, default=0.0)
 
     config = parser.parse_args()
     wandb_run = wandb_setup(config)
