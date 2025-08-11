@@ -281,17 +281,17 @@ class CycleGAN:
 
         print("Found Saved Checkpoint! Loading and continuing training ...")
 
-        with open(f"{path}/gen_A.pkl", "wb") as file:
+        with open(f"{path}/gen_A.pkl", "rb") as file:
             self.gen_A = pickle.load(file)
-        with open(f"{path}/gen_B.pkl", "wb") as file:
+        with open(f"{path}/gen_B.pkl", "rb") as file:
             self.gen_B = pickle.load(file)
 
-        with open(f"{path}/disc_A.pkl", "wb") as file:
+        with open(f"{path}/disc_A.pkl", "rb") as file:
             self.disc_A = pickle.load(file)
-        with open(f"{path}/disc_B.pkl", "wb") as file:
+        with open(f"{path}/disc_B.pkl", "rb") as file:
             self.disc_B = pickle.load(file)
 
-        with open(f"{path}/gen_train_losses.pkl", "wb") as file:
+        with open(f"{path}/gen_train_losses.pkl", "rb") as file:
             self.gen_train_losses = pickle.load(file)
-        with open(f"{path}/disc_train_losses.pkl", "wb") as file:
+        with open(f"{path}/disc_train_losses.pkl", "rb") as file:
             self.disc_train_losses = pickle.load(file)
